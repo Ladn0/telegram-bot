@@ -1,8 +1,8 @@
 const axios = require("axios");
 
-module.exports = async (url, prompt, language) => {
+module.exports = async (urll, prompt, language) => {
   const postData = {
-    url: url,
+    url: urll,
     style_preprompt: prompt,
     lang: language,
   };
@@ -16,11 +16,12 @@ module.exports = async (url, prompt, language) => {
     { headers }
   );
 
-  let str = ``;
+  let str = [];
 
-  reply.data.result.map(
-    (article) =>
-      (str += `Title of the article: ${article["article-title"]} \n \n${article["article-url"]}\n\n${article["article-summary-original"]}\n \n \n`)
+  reply.data.result.map((article) =>
+    str.push(
+      `${article["article-title"]} \n \n${article["article-url"]}\n\n${article["article-summary-original"]}\n \n \n`
+    )
   );
 
   return str;

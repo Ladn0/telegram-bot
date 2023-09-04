@@ -7,6 +7,7 @@ const bot = new TelegramApi(TOKEN, { polling: true });
 const app = express();
 const User = require("./models/user");
 const requestGtpResponse = require("./requestLogic");
+const verifier = require("./verifier");
 
 const start = async () => {
   //connecting to the db
@@ -33,8 +34,9 @@ const start = async () => {
   const startOptions = {
     reply_markup: JSON.stringify({
       inline_keyboard: [
-        [{ text: "Add a new link", callback_data: "addLink" }],
-        [{ text: "Add prompt parameters", callback_data: "addPrompt" }],
+        [{ text: "View current link and prompt", callback_data: "viewParams" }],
+        [{ text: "Configure source link", callback_data: "addLink" }],
+        [{ text: "Configure prompt parameters", callback_data: "addPrompt" }],
         [{ text: "Generate new articles", callback_data: "sendArticles" }],
       ],
     }),
@@ -80,20 +82,51 @@ const start = async () => {
         const existingUser = await User.findOne({ telegram_id: userId });
         if (
           existingUser != null &&
-          existingUser.links != null &&
-          existingUser.style != null
+          existingUser.links != undefined &&
+          existingUser.style != undefined
         ) {
           await bot.sendMessage(chatId, "Your reqest is in progress...");
           const reply = await requestGtpResponse(
             existingUser.links[existingUser.links.length - 1],
             existingUser.style,
-            "en"
+            "de"
           );
-          await bot.sendMessage(chatId, reply, startOptions);
+          for (let i of reply) {
+            await bot.sendMessage(chatId, i);
+          }
+          await bot.sendMessage(
+            chatId,
+            "Is there anything else you want me to do?",
+            startOptions
+          );
         } else {
           await bot.sendMessage(
             chatId,
             "You have not added any links or prompts defined. Please do it first!",
+            startOptions
+          );
+        }
+        break;
+      case "viewParams":
+        const theUser = await User.findOne({ telegram_id: userId });
+        if (theUser != null) {
+          await bot.sendMessage(
+            chatId,
+            `Your source link is: ${
+              theUser.links != undefined
+                ? theUser.links[theUser.links.length - 1]
+                : "*you have not configured links yet*"
+            }\nYour prompt is: ${
+              theUser.style != undefined
+                ? `"` + theUser.style + `"`
+                : "*you have not configured prompts yet*"
+            }\nWhat should I do next?`,
+            startOptions
+          );
+        } else {
+          await bot.sendMessage(
+            chatId,
+            "You did not configure any links or prompts yet",
             startOptions
           );
         }
@@ -111,16 +144,25 @@ const start = async () => {
     switch (userState) {
       case "waiting_for_link":
         if (existingUser != null) {
-          existingUser.links.push(text);
-          try {
-            await existingUser.save();
+          const val = await verifier(text);
+          if (val == "true") {
+            existingUser.links.push(text);
+            try {
+              await existingUser.save();
+              bot.sendMessage(
+                chatId,
+                "New source was added successfully! Is there anything else I can do for you?",
+                startOptions
+              );
+            } catch (err) {
+              console.log(err);
+            }
+          } else {
             bot.sendMessage(
               chatId,
-              "New source was added successfully! Is there anything else I can do for you?",
+              "This link does not work for us yet",
               startOptions
             );
-          } catch (err) {
-            console.log(err);
           }
         } else {
           const newUser = new User({
