@@ -29,7 +29,7 @@ const start = async () => {
   });
 
   app.listen(PORT || 5000, async () => {
-    await bot.setWebHook(WEBHOOK_URL);
+    bot.setWebHook(WEBHOOK_URL);
     console.log(`The app is running on port ${PORT || 5000}`);
   });
 };
