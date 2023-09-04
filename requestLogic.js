@@ -18,11 +18,11 @@ module.exports = async (urll, prompt, language) => {
 
   let str = [];
 
-  reply.data.result.map((article) =>
+  for (let article of reply.data.result) {
     str.push(
       `${article["article-title"]} \n \n${article["article-url"]}\n\n${article["article-summary-original"]}\n \n \n`
-    )
-  );
+    );
+  }
 
   return str;
 };
