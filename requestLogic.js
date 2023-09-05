@@ -20,7 +20,7 @@ module.exports = async (urll, prompt, language) => {
 
   for (let article of reply.data.result) {
     str.push(
-      `${article["article-title"]} \n \n${article["article-url"]}\n\n${article["article-summary-original"]}\n \n \n`
+      `${article["article-title"]} \n \n${article["article-url"]}\n\n${article["article-summary-translated"]}\n \n \n`
     );
   }
 
