@@ -22,10 +22,78 @@ exports.messagesHandler = async (msg, userStates, bot) => {
 
   switch (userState) {
     case "waiting_for_link":
-      // [The rest remains unchanged...]
+      if (existingUser != null) {
+        const urlPattern = /^https?:\/\/.*/;
+        const httpsUrlFormat = urlPattern.test(text);
+        if (httpsUrlFormat == false) text = "https://" + text;
+        const val = await verifier(text);
+        if (val == "true") {
+          existingUser.links.push(text);
+          try {
+            await existingUser.save();
+            bot.sendMessage(
+              chatId,
+              "New source was added successfully! Is there anything else I can do for you?",
+              startOptions
+            );
+          } catch (err) {
+            console.log(err);
+          }
+        } else {
+          bot.sendMessage(
+            chatId,
+            "This link does not work for us yet",
+            startOptions
+          );
+        }
+      } else {
+        const newUser = new User({
+          telegram_id: userId,
+          links: [text],
+        });
+        try {
+          await newUser.save();
+          bot.sendMessage(
+            chatId,
+            "The source was successfully added! Should I do anything else for you?",
+            startOptions
+          );
+        } catch (err) {
+          console.log(err);
+        }
+      }
+      userStates.delete(userId);
       break;
     case "waiting_for_style":
-      // [The rest remains unchanged...]
+      if (existingUser != null) {
+        existingUser.style = text;
+        try {
+          await existingUser.save();
+          bot.sendMessage(
+            chatId,
+            "The props were added successfully! Is there anything else I can do for you?",
+            startOptions
+          );
+        } catch (err) {
+          console.log(err);
+        }
+      } else {
+        const newUser = new User({
+          telegram_id: userId,
+          style: text,
+        });
+        try {
+          await newUser.save();
+          bot.sendMessage(
+            chatId,
+            "The props were uploaded susseccfully! Should I do anything else for you?",
+            startOptions
+          );
+        } catch (err) {
+          console.log(err);
+        }
+      }
+      userStates.delete(userId);
       break;
     default:
       if (text != "/start") {
